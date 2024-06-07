@@ -2,6 +2,15 @@
 
 require '../utils.php';
 
+$current_user = get_authenticated_user();
+if ($current_user == null){
+    include 'blocks/notauthorized.php';
+    exit;
+} elseif ($current_user && !str_contains($current_user['status'], "contrib")){
+    include 'blocks/notallowed.php';
+    exit;
+}
+
 $hero_colors = ['danger', 'success', 'black', 'warning', 'link'];
 
 $random_color_idx = array_rand($hero_colors);

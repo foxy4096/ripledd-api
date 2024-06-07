@@ -21,6 +21,7 @@ $data = json_decode($json, true) ?? $_POST;
 
 $email = $data['email'] ?? null;
 $password = $data['password'] ?? null;
+$next = $data['next'] ?? null;
 
 $user = authenticate_user($email, $password);
 
@@ -32,6 +33,12 @@ if (!$user) {
 }
 
 set_session('secure_id', $user['secure_id']);
+
+if ($next) {
+    header("Location: $next");
+    http_response_code(302);
+    exit;
+}
 
 echo json_encode(display_user($user, ['password']));
 exit;

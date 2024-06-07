@@ -9,7 +9,7 @@
     <div class="navbar-item">
       <?php if (!is_null(get_authenticated_user())) : ?>
         <div class="buttons">
-          <a class="button is-ghost" href="/c/profile.php?u=<?= get_authenticated_user()['uname']?>">
+          <a class="button is-ghost" href="/c/profile.php?u=<?= get_authenticated_user()['user_url']?>">
             <article class="image">
               <img src="/profile/<?= get_authenticated_user()['avatar'] ?>" alt="user-profile-image" style="width: 25px; height: 25px; object-fit: cover; border-radius: 99999px;">
             </article>

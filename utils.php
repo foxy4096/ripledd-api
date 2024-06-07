@@ -39,7 +39,6 @@ function db_query($sql, $params = array(), $single = true)
 
     if (!$success) {
         // Handle SQL query execution error
-        echo "1ST FUCK";
         return null;
     }
 
@@ -119,7 +118,7 @@ function get_username_by_id($id)
 }
 function get_user_by_username($username)
 {
-    return db_query("SELECT * FROM users WHERE uname = ?", [$username]);
+    return db_query("SELECT * FROM users WHERE user_url = ?", [$username]);
 }
 function get_user_by_email($email)
 {
@@ -249,3 +248,9 @@ function get_stats()
     $users_count = db_count('users');
     return array('users' => $users_count, 'posts' => $posts_count);
 }
+
+function is_image($path) {
+    $image_info = getimagesize($path);
+    return $image_info !== false;
+}
+
