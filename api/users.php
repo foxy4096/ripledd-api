@@ -4,8 +4,9 @@ require '../utils.php';
 
 header('Content-Type: application/json');
 
-$limit = $_GET['limit'] ?? 10;
-$offset = $_GET['offset'] ?? 0;
+$limit = $_GET["limit"] ?? 10;
+$page = $_GET["page"] ?? 1;
+$offset = ($page - 1) * $limit;
 
 $users = get_all_users($limit, $offset);
 

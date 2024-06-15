@@ -1,12 +1,14 @@
 <?php
 
 require '../utils.php';
+require "./blocks/routes.php";
+
 
 $current_user = get_authenticated_user();
-if ($current_user == null){
+if ($current_user == null) {
     include 'blocks/notauthorized.php';
     exit;
-} elseif ($current_user && !str_contains($current_user['status'], "contrib")){
+} elseif ($current_user && !str_contains($current_user['status'], "contrib")) {
     include 'blocks/notallowed.php';
     exit;
 }
@@ -104,19 +106,13 @@ if (isset($_POST['key']) && isset($_POST['value'])) {
                             <?= $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] ?>
                         </a>
                     </p>
+
                     <div class="control">
-                        <input type="text" list="urls" id="mini-post-url" class="input" name="url" value="/api/me.php">
+                        <input type="text" list="urls" id="mini-post-url" class="input" name="url" value="/api/me">
                         <datalist id="urls">
-                            <option value="/api/me.php">
-                            <option value="/api/post/create.php">
-                            <option value="/api/login.php">
-                            <option value="/api/logout.php">
-                            <option value="/api/user.php">
-                            <option value="/api/users.php">
-                            <option value="/api/post.php">
-                            <option value="/api/signup.php">
-                            <option value="/api/upload/avatar.php">
-                            <option value="/api/upload/banner.php">
+                            <?php foreach ($routes['api'] as $endpoint => $details) : ?>
+                                <option value="<?= $details['url'] ?>">
+                                <?php endforeach; ?>
                         </datalist>
                     </div>
                 </div>
@@ -124,6 +120,11 @@ if (isset($_POST['key']) && isset($_POST['value'])) {
                     <label for="data" class="label">Body</label>
                     <div class="control">
                         <div name="body" id="mini-post-body" cols="30" style="height: 20vh;" rows="10" placeholder="Enter in json" class="textarea is-family-monospace">{}</div>
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="control">
+                        <button class="button" id="mini-post-append-paginator">Add Paginator</button>
                     </div>
                 </div>
                 <div class="field">
@@ -180,98 +181,7 @@ if (isset($_POST['key']) && isset($_POST['value'])) {
                 </div>
             </section>
             <hr>
-            <h3 class="title is-3">API Routes</h3>
-            <div style="overflow: auto;">
-
-                <table class="table is-fullwidth is-hoverable">
-                    <thead>
-                        <tr>
-                            <th>API Endpoint</th>
-                            <th>Description</th>
-                            <th>Arguments</th>
-                            <th>Request Method</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><code>/api/me.php</code></td>
-                            <td>Get the current authenticated user</td>
-                            <td><code>n/a</code></td>
-                            <td>GET</td>
-                        </tr>
-                        <tr>
-                            <td><code>/api/post/create.php</code></td>
-                            <td>Create a new post</td>
-                            <td><code>title, content</code></td>
-                            <td>POST</td>
-                        </tr>
-                        <tr>
-                            <td><code>/api/login.php</code></td>
-                            <td>User login</td>
-                            <td><code>email, password</code></td>
-                            <td>POST</td>
-                        </tr>
-                        <tr>
-                            <td><code>/api/logout.php</code></td>
-                            <td>User logout</td>
-                            <td><code>n/a</code></td>
-                            <td>POST</td>
-                        </tr>
-                        <tr>
-                            <td><code>/api/user.php</code></td>
-                            <td>Get user details</td>
-                            <td><code>username</code></td>
-                            <td>GET</td>
-                        </tr>
-                        <tr>
-                            <td><code>/api/users.php</code></td>
-                            <td>Get a list of users</td>
-                            <td><code>n/a</code></td>
-                            <td>GET</td>
-                        </tr>
-                        <tr>
-                            <td><code>/api/post.php</code></td>
-                            <td>Get a specific post</td>
-                            <td><code>id</code></td>
-                            <td>GET</td>
-                        </tr>
-                        <tr>
-                            <td><code>/api/signup.php</code></td>
-                            <td>User sign up</td>
-                            <td><code>username, email, password</code></td>
-                            <td>POST</td>
-                        </tr>
-                        <tr>
-                            <td><code>/api/upload/avatar.php</code></td>
-                            <td>Upload user avatar</td>
-                            <td><code>avatar file [`avatar`]</code></td>
-                            <td>POST</td>
-                        </tr>
-                        <tr>
-                            <td><code>/api/upload/banner.php</code></td>
-                            <td>Upload user banner</td>
-                            <td><code>banner file [`banner`]</code></td>
-                            <td>POST</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <br>
-            <h3 class="title is-3 has-text-centered">Stats</h3>
-            <nav class="level is-mobile">
-                <div class="level-item has-text-centered">
-                    <div>
-                        <p class="heading">Users</p>
-                        <p class="title"><?= get_stats()['users'] ?></p>
-                    </div>
-                </div>
-                <div class="level-item has-text-centered">
-                    <div>
-                        <p class="heading">Posts</p>
-                        <p class="title"><?= get_stats()['posts'] ?></p>
-                    </div>
-                </div>
-            </nav>
+            <?php include "./blocks/routetable.php" ?>
         </section>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.8/ace.js"></script>
@@ -288,6 +198,16 @@ if (isset($_POST['key']) && isset($_POST['value'])) {
             }
             return true;
         }
+        document.getElementById('mini-post-append-paginator').addEventListener('click', function() {
+            let body = bodyEditor.getValue();
+            if (!isJson(body)) {
+                alert("Body is not valid JSON");
+                return;
+            }
+            let bodyParams = JSON.parse(body);
+            bodyParams['page'] = 1;
+            bodyEditor.setValue(JSON.stringify(bodyParams, null, 2));
+        })
         document.getElementById('mini-post-submit').addEventListener('click', function() {
             try {
 

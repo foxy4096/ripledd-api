@@ -23,7 +23,7 @@
           document.getElementById('logout-button').addEventListener('click', function() {
             fetch('/api/logout.php').then(response => {
               if (response.ok) {
-                window.location.href = './sandbox.php';
+                window.location.href = '/api/sandbox.php';
               } else {
                 alert('Error logging out');
               }

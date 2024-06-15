@@ -14,6 +14,7 @@ require '../../utils.php';
 </head>
 
 <body>
+    <?php include '../blocks/navbar.php'; ?>
     <div class="container">
     <section class="section">
 

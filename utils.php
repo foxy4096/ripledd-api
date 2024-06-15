@@ -92,14 +92,14 @@ function get_request_post_data()
 
 // USER/AUTH RELATED METHODS
 
-function generate_secure_id()
+function generate_secure_id($len = 10)
 {
-    return bin2hex(random_bytes(16));
+    return bin2hex(random_bytes($len));
 }
 
 function get_secure_id()
 {
-    return $_SESSION['secure_id'] ?? $_COOKIE['secure_id'] ?? $_SERVER['SECURE_ID'] ?? null;
+    return $_SESSION['secure_id'] ?? $_COOKIE['secure_id'] ?? $_SERVER['HTTP_SECURE_ID'] ?? null;
 }
 
 function get_all_users($limit = 10, $offset = 0)
@@ -210,18 +210,22 @@ function get_all_user_posts_by_secure_id($secure_id, $limit = 10, $offset = 0)
 
 function user_own_this_channel($user_id, $channel_id)
 {
-    $channel = db_query("SELECT * FROM users WHERE id = ? AND owner_id = ?", [$channel_id, $user_id]);
-    return $channel;
+
+    return db_query("SELECT * FROM users WHERE secure_id = ? AND owner = ?", [$channel_id, $user_id]) ?? null;
 }
 
-function create_post($user_id, $content, $category = "None")
+function create_post($user_id, $content, $category = "")
 {
+    $id_gener1 = bin2hex(random_bytes(4));
+    $id_gener2 = bin2hex(random_bytes(1));
+    $id = $id_gener1 . $id_gener2;
     $get_date = gmdate("Y-m-d");
     $get_date_two = date("Y-m-d H:i:s");
-    return db_query(
+    $result =  db_query(
         "INSERT INTO post_data (id, user_id, content, post_date, post_date_two, posted_by, c_type) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [bin2hex(random_bytes(4)) . bin2hex(random_bytes(1)), $user_id, $content, $get_date, $get_date_two, get_username_by_id($user_id)['uname'], $category]
+        [$id, $user_id, $content, $get_date, $get_date_two, get_username_by_id($user_id)['uname'], $category]
     );
+    return [$result, get_post_by_id($id)];
 }
 
 function require_post()
@@ -242,6 +246,20 @@ function require_get()
 }
 
 
+function create_channel($user_id, $channel_name, $channel_username, $limited = false)
+{
+    $secure_id = generate_secure_id() . "-c-sub";
+    $channel_type = $limited ? "limited" : "sub-basic";
+    $result = db_query(
+        "INSERT INTO users (uname, secure_id, user_url, join_date, owner, type) VALUES (?, ?, ?, ?, ?, ?)",
+        [$channel_name, $secure_id, htmlspecialchars($channel_username), gmdate("d/m/y"), $user_id, $channel_type]
+    );
+    if (!$result) {
+        return ["status" => "error", "messages" => "Channel could not be created"];
+    }
+    return ["status" => "success", "message" => "Channel created successfully", "user" => get_username_by_id($result)];
+}
+
 function get_stats()
 {
     $posts_count = db_count('post_data');
@@ -249,8 +267,31 @@ function get_stats()
     return array('users' => $users_count, 'posts' => $posts_count);
 }
 
-function is_image($path) {
+function is_image($path)
+{
     $image_info = getimagesize($path);
     return $image_info !== false;
 }
 
+
+function login_required()
+{
+    $user = get_authenticated_user();
+    if (!$user) {
+        echo json_encode(['error' => 'User not authenticated']);
+        http_response_code(401);
+        exit;
+    }
+    return $user;
+}
+
+
+function get_all_user_channels($user_id, $limit = 10, $offset = 0, $paginate = false)
+{
+    if ($paginate) {
+        $offset = ($offset - 1) * $limit;
+        return db_query("SELECT * FROM users WHERE owner = ? LIMIT ? OFFSET ?", [$user_id, $limit, $offset], false);
+    } else {
+        return db_query("SELECT * FROM users WHERE owner = ?", [$user_id], false);
+    }
+}
